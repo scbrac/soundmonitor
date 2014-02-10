@@ -197,10 +197,10 @@ def main(options):
             opts.server)
     sendemail(message)
     while 1:
-        #todaymidnight = datetime.datetime.combine(datetime.date.today(),
-        #        datetime.time())
-        #until = todaymidnight + datetime.timedelta(days=1, hours=8)
-        until = datetime.datetime.now() + datetime.timedelta(minutes=1)
+        todaymidnight = datetime.datetime.combine(datetime.date.today(),
+                datetime.time())
+        until = todaymidnight + datetime.timedelta(days=1, hours=8)
+        #until = datetime.datetime.now() + datetime.timedelta(minutes=1)
         recordday(opts, until)
 
 
