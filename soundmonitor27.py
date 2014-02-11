@@ -25,19 +25,24 @@ Usage:
     soundmonitor.py (-h | --help)
     soundmonitor.py [-h] [--threshold=THRESH] [--emailto=EMAIL]
                     [--rate=RATE] [--seconds=SECONDS] [--server=SERVER]
-                    [--warnperiod=PERIOD]
+                    [--warnperiod=PERIOD] [--tmpdir=DIR]
 
 Options:
-    -h                  Print this help message.
-    --threshold=THRESH  Sound level alarm threhold, higher values are more
-                        sensitive [default: 1000].
-    --emailto=EMAIL     E-mail adress(es) to send a message to. If empty
-                        no message is sent [default: scb@localhost].
-    --server=SERVER     SMTP server [default: localhost].
-    --rate=RATE         Audio data sampling rate [default: 44100].
-    --seconds=SECONDS   Length of sound data to evaluate per scan [default: 1].
-    --warnperiod=PERIOD Minimum duration between two alarm or warning
-                        emails in seconds [default: 1800].
+    -h                   Print this help message.
+    --threshold=THRESH   Sound level alarm threhold, higher values are more
+                         sensitive [default: 1000].
+    --emailto=EMAIL      E-mail adress(es) to send a message to. If empty
+                         no message is sent [default: scb@localhost].
+    --server=SERVER      SMTP server [default: localhost].
+    --rate=RATE          Audio data sampling rate [default: 44100].
+    --seconds=SECONDS    Length of sound data to evaluate per scan [default: 1]
+    --warnperiod=PERIOD  Minimum duration between two alarm or warning
+                         emails in seconds [default: 1800].
+    --aliveperiod=PERIOD Duration between two sign of live emails, format:
+                         nU, where n is an integer number an U is a unit (m for
+                         minutes, d for days) [default: 1d]
+    --tmpdir=DIR         Directory, e.g. ramdisk, where to save temporary data
+                         (microphone sampling data) [default: /mnt/tmp]
 """
 
 import os
@@ -53,7 +58,8 @@ from email import encoders
 import datetime
 from collections import namedtuple
 
-OPTS = namedtuple('OPTS', 'threshold rate seconds emailto server period')
+OPTS = namedtuple('OPTS', 'threshold rate seconds emailto server period\
+        aliveperiod tmpdir')
 MESSAGE = namedtuple('MESSAGE', 'me to subject text attachments server')
 
 
@@ -97,10 +103,13 @@ def getsoundlevel(opts):
     """Estimate sound level. Sound level is defined as mean absolute value
     of the microphone data."""
     record = 'arecord -q -t raw -f S16_LE -c 1\
-            -r {rate} -d {seconds} foo.raw'.format(rate=opts.rate,
-                    seconds=opts.seconds)
+            -r {rate} -d {seconds} {filename}'.format(rate=opts.rate,
+                    seconds=opts.seconds,
+                    filename=os.path.join(opts.tmpdir, 'foo.raw'))
     if os.system(record) == 0:
-        data = np.fromfile('foo.raw', dtype=np.int16, count=-1, sep='')
+        data = np.fromfile('{filename}'.format(
+            filename=os.path.join(opts.tmpdir, 'foo.raw')), dtype=np.int16,
+            count=-1, sep='')
         data = data.astype(np.float32)
         meanabs = np.mean(np.abs(data))
     else:
@@ -186,7 +195,8 @@ def main(options):
         emailto = [options['--emailto']]
     opts = OPTS(int(options['--threshold']), int(options['--rate']),
         float(options['--seconds']), emailto, options['--server'],
-        int(options['--warnperiod']))
+        int(options['--warnperiod']), options['--aliveperiod'],
+        options['--tmpdir'])
     message = MESSAGE(
             'compressor@localhost',
             opts.emailto,
@@ -197,10 +207,14 @@ def main(options):
             opts.server)
     sendemail(message)
     while 1:
-        #todaymidnight = datetime.datetime.combine(datetime.date.today(),
-        #        datetime.time())
-        #until = todaymidnight + datetime.timedelta(days=1, hours=8)
-        until = datetime.datetime.now() + datetime.timedelta(minutes=1)
+        num = int(opts.aliveperiod[:-1])
+        unit = opts.aliveperiod[-1]
+        if unit == 'd':
+            todaymidnight = datetime.datetime.combine(datetime.date.today(),
+                    datetime.time())
+            until = todaymidnight + datetime.timedelta(days=num, hours=8)
+        else:
+            until = datetime.datetime.now() + datetime.timedelta(minutes=num)
         recordday(opts, until)
 
 
