@@ -23,7 +23,7 @@ License:
 
 Usage:
     soundmonitor.py (-h | --help)
-    soundmonitor.py [-h] [--threshold=THRESH] [--emailto=EMAIL]
+    soundmonitor.py [-h] [--threshold=THRESH] [--emailto=EMAIL ...]
                     [--rate=RATE] [--seconds=SECONDS] [--server=SERVER]
                     [--warnperiod=PERIOD] [--aliveperiod=PERIOD] [--tmpdir=DIR]
 
