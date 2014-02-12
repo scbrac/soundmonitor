@@ -122,10 +122,26 @@ def latencyover(opts, lasttime):
     """Return true if latency is over, false otherwise. Latency is over if the
     time between lasttime and now is greater than the waiting time defined in
     opts.period."""
-    if (datetime.datetime.now() - lasttime).total_seconds > opts.period:
+    if (datetime.datetime.now() - lasttime).total_seconds() > opts.period:
         return True
     else:
         return False
+
+
+def getattachments(figure, timestamps, levels):
+    """Save PNG file and WAV file to be attached to emails, return the file
+    names as list."""
+    filenamebase = '{}_sound'.format(
+            datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S'))
+    pngfile = '{}.png'.format(filenamebase)
+    wavfile = '{}.wav'.format(filenamebase)
+    numpyfile = '{}.numpy'.format(filenamebase)
+    os.system('arecord -q -f cd -d 5 {}'.format(wavfile))
+    figure.savefig(pngfile)
+    fpt = file(numpyfile, 'wb')
+    np.save(fpt, timestamps)
+    np.save(fpt, levels)
+    return [pngfile, wavfile, numpyfile]
 
 
 def recordday(opts, until):
@@ -161,8 +177,8 @@ def recordday(opts, until):
                     opts.emailto,
                     'Sound monitor warning',
                     'Warning: recording failed at {}'.format(
-                        datetime.datetime.now().isoformat(' ')),
-                    [], opts.server)
+                        datetime.datetime.now().isoformat()),
+                    getattachments(plt, timestamps, levels), opts.server)
             sendemail(message)
             lastwarningtime = datetime.datetime.now()
 
@@ -174,30 +190,22 @@ def recordday(opts, until):
                     opts.emailto,
                     '*** COMPRESSOR ALARM ***',
                     'ALARM! Sound level below threshold at {}'.format(
-                        datetime.datetime.now().isoformat(' ')),
-                    [],
-                    opts.server)
+                        datetime.datetime.now().isoformat()),
+                    getattachments(plt, timestamps, levels), opts.server)
             sendemail(message)
             lastalarmtime = datetime.datetime.now()
-    filename = '{}_sound'.format(until.strftime('%Y-%m-%d'))
-    fpt = file('{}.numpy'.format(filename), 'wb')
-    np.save(fpt, timestamps)
-    np.save(fpt, levels)
-    plt.savefig('{}.png'.format(filename))
-    os.system('arecord -q -f cd -d 5 {}.wav'.format(filename))
     message = MESSAGE(
             'compressor@localhost',
             opts.emailto,
             'Sound monitor daily message',
             'Sound monitor daily message: all in best order, have fun!',
-            ['{}.png'.format(filename), '{}.wav'.format(filename)],
-            'localhost')
+            getattachments(plt, timestamps, levels),
+            opts.server)
     sendemail(message)
 
 
 def main(options):
     """Main program..."""
-    print(np.datetime64(datetime.datetime.now()))
     if type(options['--emailto']) == list:
         emailto = options['--emailto']
     else:
@@ -211,7 +219,7 @@ def main(options):
             opts.emailto,
             'Sound monitor started',
             'The sound monitor was started at {}'.format(
-                datetime.datetime.now().isoformat(' ')),
+                datetime.datetime.now().isoformat()),
             [],
             opts.server)
     sendemail(message)
