@@ -25,7 +25,7 @@ Usage:
     soundmonitor.py (-h | --help)
     soundmonitor.py [-h] [--threshold=THRESH] [--emailto=EMAIL]
                     [--rate=RATE] [--seconds=SECONDS] [--server=SERVER]
-                    [--warnperiod=PERIOD] [--tmpdir=DIR]
+                    [--warnperiod=PERIOD] [--aliveperiod=PERIOD] [--tmpdir=DIR]
 
 Options:
     -h                   Print this help message.
@@ -118,6 +118,16 @@ def getsoundlevel(opts):
     return meanabs
 
 
+def latencyover(opts, lasttime):
+    """Return true if latency is over, false otherwise. Latency is over if the
+    time between lasttime and now is greater than the waiting time defined in
+    opts.period."""
+    if (datetime.datetime.now() - lasttime).total_seconds > opts.period:
+        return True
+    else:
+        return False
+
+
 def recordday(opts, until):
     """Record sound level for one day, beginning and ending at 08:00h
 
@@ -144,8 +154,7 @@ def recordday(opts, until):
         plt.plot([0, len(levels)], [opts.threshold, opts.threshold], 'r')
         plt.plot(levels)
         plt.draw()
-        if (soundlevel < 0) and (datetime.datetime.now() -
-                lastwarningtime).total_seconds > opts.period:
+        if (soundlevel < 0) and latencyover(opts, lastwarningtime):
             # Warning: recording has failed
             message = MESSAGE(
                     'compressor@localhost',
@@ -157,8 +166,8 @@ def recordday(opts, until):
             sendemail(message)
             lastwarningtime = datetime.datetime.now()
 
-        elif (0 < soundlevel < opts.threshold) and (datetime.datetime.now() -
-                lastalarmtime).total_seconds() > opts.period:
+        elif (0 < soundlevel < opts.threshold) and latencyover(opts,
+                lastalarmtime):
             # Alarm: soundlevel below threshold
             message = MESSAGE(
                     'compressor@localhost',
