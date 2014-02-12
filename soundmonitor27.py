@@ -144,19 +144,36 @@ def getattachments(figure, timestamps, levels):
     return [pngfile, wavfile, numpyfile]
 
 
+def discharging():
+    """Return true, if laptop battery is discharging, false otherwise."""
+    bat0path = '/sys/class/power_supply/BAT0/uevent'
+    bat1path = '/sys/class/power_supply/BAT1/uevent'
+    if os.path.exists(bat0path):
+        with open(bat0path) as fpt:
+            lines = fpt.readlines()
+    elif os.path.exists(bat1path):
+        with open(bat1path) as fpt:
+            lines = fpt.readlines()
+    else:
+        print('keine Batterie gefunden')
+        return False  # no battery found
+    batstatusline = [line for line in lines if 'POWER_SUPPLY_STATUS' in line]
+    if 'discharging' in batstatusline[0].split('=')[1].lower():
+        return True
+    else:
+        return False
+
+
 def recordday(opts, until):
-    """Record sound level for one day, beginning and ending at 08:00h
-
-    :until: @todo
-    :returns: @todo
-
-    """
+    """Record sound level until 'until'. If 'until' is measured in days,
+    beginning and ending at 08:00h."""
     levels = np.array([])
     timestamps = np.array([], dtype='datetime64')
     plt.ion()
     lastwarningtime = (datetime.datetime.now() -
             datetime.timedelta(seconds=opts.period))
     lastalarmtime = lastwarningtime
+    lastbatterytime = lastwarningtime
     while datetime.datetime.now() < until:
         soundlevel = getsoundlevel(opts)
         levels = np.append(levels, soundlevel)
@@ -194,6 +211,18 @@ def recordday(opts, until):
                     getattachments(plt, timestamps, levels), opts.server)
             sendemail(message)
             lastalarmtime = datetime.datetime.now()
+        if discharging() and latencyover(opts, lastbatterytime):
+            # Warning: laptop runs on battery
+            message = MESSAGE(
+                    'compressor@localhost',
+                    opts.emailto,
+                    'Warning: Sound monitor on battery',
+                    'Sound monitor laptops runs on battery at {}'.format(
+                        datetime.datetime.now().isoformat()),
+                    getattachments(plt, timestamps, levels), opts.server)
+            sendemail(message)
+            lastbatterytime = datetime.datetime.now()
+
     message = MESSAGE(
             'compressor@localhost',
             opts.emailto,
