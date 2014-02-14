@@ -141,6 +141,7 @@ def getattachments(figure, timestamps, levels):
     fpt = file(numpyfile, 'wb')
     np.save(fpt, timestamps)
     np.save(fpt, levels)
+    fpt.close()
     return [pngfile, wavfile, numpyfile]
 
 
