@@ -118,6 +118,16 @@ def getsoundlevel(opts):
     return meanabs
 
 
+def savesound(opts, minmax):
+    """Save the sound files with minimum or maximum soundlevel per day."""
+    copy = 'cp {fromfile} {tofile}'.format(
+            fromfile=os.path.join(opts.tmpdir, 'foo.raw'),
+            tofile='{date}_{minmax}'.format(
+                date=datetime.datetime.now().strftime('%Y-%m-%d'),
+                minmax=minmax))
+    os.system(copy)
+
+
 def latencyover(opts, lasttime):
     """Return true if latency is over, false otherwise. Latency is over if the
     time between lasttime and now is greater than the waiting time defined in
@@ -175,6 +185,8 @@ def recordday(opts, until):
             datetime.timedelta(seconds=opts.period))
     lastalarmtime = lastwarningtime
     lastbatterytime = lastwarningtime
+    minsoundlevel = 1e9
+    maxsoundlevel = 0
     while datetime.datetime.now() < until:
         soundlevel = getsoundlevel(opts)
         levels = np.append(levels, soundlevel)
@@ -223,6 +235,12 @@ def recordday(opts, until):
                     getattachments(plt, timestamps, levels), opts.server)
             sendemail(message)
             lastbatterytime = datetime.datetime.now()
+        if soundlevel < minsoundlevel:
+            savesound(opts, 'min')
+            minsoundlevel = soundlevel
+        elif soundlevel > maxsoundlevel:
+            savesound(opts, 'max')
+            maxsoundlevel = soundlevel
 
     message = MESSAGE(
             'compressor@localhost',
