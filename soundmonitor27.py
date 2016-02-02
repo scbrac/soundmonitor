@@ -181,7 +181,7 @@ def recordday(opts, until):
     """Record sound level until 'until'. If 'until' is measured in days,
     beginning and ending at 08:00h."""
     levels = np.array([])
-    timestamps = np.array([], dtype='datetime64')
+    timestamps = np.array([], dtype='datetime64[us]')
     plt.ion()
     lastwarningtime = (datetime.datetime.now() -
                        datetime.timedelta(seconds=opts.period))
