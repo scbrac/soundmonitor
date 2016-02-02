@@ -104,8 +104,9 @@ def sendemail(message):
 def getsoundlevel(opts):
     """Estimate sound level. Sound level is defined as mean absolute value
     of the microphone data."""
-    record = 'arecord -q -t raw -f S16_LE -c 1\
-            -r {rate} -d {seconds} {filename}'.format(
+    fixoptions = '-q -t raw -f S16_LE -c 1'
+    record = 'arecord {fixoptions} -r {rate} -d {seconds} {filename}'.format(
+        fixoptions=fixoptions,
         rate=opts.rate,
         seconds=opts.seconds,
         filename=os.path.join(opts.tmpdir, 'foo.raw'))
