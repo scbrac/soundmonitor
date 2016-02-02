@@ -90,8 +90,9 @@ def sendemail(message):
         part = MIMEBase('application', 'octet-stream')
         part.set_payload(open(attachment, 'rb').read())
         encoders.encode_base64(part)
-        part.add_header('Content-Disposition', 'attachment',
-                filename='{}'.format(os.path.basename(attachment)))
+        part.add_header(
+            'Content-Disposition', 'attachment', filename='{}'.format(
+                os.path.basename(attachment)))
         msg.attach(part)
     smtp = smtplib.SMTP(message.server)
     smtp.sendmail(message.me, message.to, msg.as_string())
@@ -103,9 +104,10 @@ def getsoundlevel(opts):
     """Estimate sound level. Sound level is defined as mean absolute value
     of the microphone data."""
     record = 'arecord -q -t raw -f S16_LE -c 1\
-            -r {rate} -d {seconds} {filename}'.format(rate=opts.rate,
-                    seconds=opts.seconds,
-                    filename=os.path.join(opts.tmpdir, 'foo.raw'))
+            -r {rate} -d {seconds} {filename}'.format(
+        rate=opts.rate,
+        seconds=opts.seconds,
+        filename=os.path.join(opts.tmpdir, 'foo.raw'))
     if os.system(record) == 0:
         data = np.fromfile('{filename}'.format(
             filename=os.path.join(opts.tmpdir, 'foo.raw')), dtype=np.int16,
@@ -121,10 +123,10 @@ def getsoundlevel(opts):
 def savesound(opts, minmax):
     """Save the sound files with minimum or maximum soundlevel per day."""
     copy = 'cp {fromfile} {tofile}'.format(
-            fromfile=os.path.join(opts.tmpdir, 'foo.raw'),
-            tofile='{date}_{minmax}'.format(
-                date=datetime.datetime.now().strftime('%Y-%m-%d'),
-                minmax=minmax))
+        fromfile=os.path.join(opts.tmpdir, 'foo.raw'),
+        tofile='{date}_{minmax}'.format(
+            date=datetime.datetime.now().strftime('%Y-%m-%d'),
+            minmax=minmax))
     os.system(copy)
 
 
@@ -142,7 +144,7 @@ def getattachments(figure, timestamps, levels):
     """Save PNG file and WAV file to be attached to emails, return the file
     names as list."""
     filenamebase = '{}_sound'.format(
-            datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S'))
+        datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S'))
     pngfile = '{}.png'.format(filenamebase)
     wavfile = '{}.wav'.format(filenamebase)
     numpyfile = '{}.numpy'.format(filenamebase)
@@ -182,7 +184,7 @@ def recordday(opts, until):
     timestamps = np.array([], dtype='datetime64')
     plt.ion()
     lastwarningtime = (datetime.datetime.now() -
-            datetime.timedelta(seconds=opts.period))
+                       datetime.timedelta(seconds=opts.period))
     lastalarmtime = lastwarningtime
     lastbatterytime = lastwarningtime
     minsoundlevel = 1e9
@@ -190,49 +192,49 @@ def recordday(opts, until):
     while datetime.datetime.now() < until:
         soundlevel = getsoundlevel(opts)
         levels = np.append(levels, soundlevel)
-        timestamps = np.append(timestamps,
-                np.datetime64(datetime.datetime.now()))
+        timestamps = np.append(
+            timestamps, np.datetime64(datetime.datetime.now()))
         plt.cla()
         plt.xlabel('sample number')
         plt.ylabel('Sound level')
         plt.plot([0, len(levels)],
-                [opts.threshold * 0.9, opts.threshold * 1.1], 'w')
+                 [opts.threshold * 0.9, opts.threshold * 1.1], 'w')
         plt.plot([0, len(levels)], [opts.threshold, opts.threshold], 'r')
         plt.plot(levels)
         plt.draw()
         if (soundlevel < 0) and latencyover(opts, lastwarningtime):
             # Warning: recording has failed
             message = MESSAGE(
-                    'compressor@localhost',
-                    opts.emailto,
-                    'Sound monitor warning',
-                    'Warning: recording failed at {}'.format(
-                        datetime.datetime.now().isoformat()),
-                    getattachments(plt, timestamps, levels), opts.server)
+                'compressor@localhost',
+                opts.emailto,
+                'Sound monitor warning',
+                'Warning: recording failed at {}'.format(
+                    datetime.datetime.now().isoformat()),
+                getattachments(plt, timestamps, levels), opts.server)
             sendemail(message)
             lastwarningtime = datetime.datetime.now()
 
         elif (0 < soundlevel < opts.threshold) and latencyover(opts,
-                lastalarmtime):
+                                                               lastalarmtime):
             # Alarm: soundlevel below threshold
             message = MESSAGE(
-                    'compressor@localhost',
-                    opts.emailto,
-                    '*** COMPRESSOR ALARM ***',
-                    'ALARM! Sound level below threshold at {}'.format(
-                        datetime.datetime.now().isoformat()),
-                    getattachments(plt, timestamps, levels), opts.server)
+                'compressor@localhost',
+                opts.emailto,
+                '*** COMPRESSOR ALARM ***',
+                'ALARM! Sound level below threshold at {}'.format(
+                    datetime.datetime.now().isoformat()),
+                getattachments(plt, timestamps, levels), opts.server)
             sendemail(message)
             lastalarmtime = datetime.datetime.now()
         if discharging() and latencyover(opts, lastbatterytime):
             # Warning: laptop runs on battery
             message = MESSAGE(
-                    'compressor@localhost',
-                    opts.emailto,
-                    'Warning: Sound monitor on battery',
-                    'Sound monitor laptops runs on battery at {}'.format(
-                        datetime.datetime.now().isoformat()),
-                    getattachments(plt, timestamps, levels), opts.server)
+                'compressor@localhost',
+                opts.emailto,
+                'Warning: Sound monitor on battery',
+                'Sound monitor laptops runs on battery at {}'.format(
+                    datetime.datetime.now().isoformat()),
+                getattachments(plt, timestamps, levels), opts.server)
             sendemail(message)
             lastbatterytime = datetime.datetime.now()
         if soundlevel < minsoundlevel:
@@ -243,12 +245,12 @@ def recordday(opts, until):
             maxsoundlevel = soundlevel
 
     message = MESSAGE(
-            'compressor@localhost',
-            opts.emailto,
-            'Sound monitor daily message',
-            'Sound monitor daily message: all in best order, have fun!',
-            getattachments(plt, timestamps, levels),
-            opts.server)
+        'compressor@localhost',
+        opts.emailto,
+        'Sound monitor daily message',
+        'Sound monitor daily message: all in best order, have fun!',
+        getattachments(plt, timestamps, levels),
+        opts.server)
     sendemail(message)
 
 
@@ -258,25 +260,26 @@ def main(options):
         emailto = options['--emailto']
     else:
         emailto = [options['--emailto']]
-    opts = OPTS(int(options['--threshold']), int(options['--rate']),
+    opts = OPTS(
+        int(options['--threshold']), int(options['--rate']),
         float(options['--seconds']), emailto, options['--server'],
         int(options['--warnperiod']), options['--aliveperiod'],
         options['--tmpdir'])
     message = MESSAGE(
-            'compressor@localhost',
-            opts.emailto,
-            'Sound monitor started',
-            'The sound monitor was started at {}'.format(
-                datetime.datetime.now().isoformat()),
-            [],
-            opts.server)
+        'compressor@localhost',
+        opts.emailto,
+        'Sound monitor started',
+        'The sound monitor was started at {}'.format(
+            datetime.datetime.now().isoformat()),
+        [],
+        opts.server)
     sendemail(message)
     while 1:
         num = int(opts.aliveperiod[:-1])
         unit = opts.aliveperiod[-1]
         if unit == 'd':
-            todaymidnight = datetime.datetime.combine(datetime.date.today(),
-                    datetime.time())
+            todaymidnight = datetime.datetime.combine(
+                datetime.date.today(), datetime.time())
             until = todaymidnight + datetime.timedelta(days=num, hours=8)
         else:
             until = datetime.datetime.now() + datetime.timedelta(minutes=num)
