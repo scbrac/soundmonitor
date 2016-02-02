@@ -34,7 +34,7 @@ Options:
     --emailto=EMAIL      E-mail adress(es) to send a message to. If empty
                          no message is sent [default: scb@localhost].
     --server=SERVER      SMTP server [default: localhost].
-    --rate=RATE          Audio data sampling rate [default: 44100].
+    --rate=RATE          Audio data sampling rate [default: 48000].
     --seconds=SECONDS    Length of sound data to evaluate per scan [default: 1]
     --warnperiod=PERIOD  Minimum duration between two alarm or warning
                          emails in seconds [default: 1800].
