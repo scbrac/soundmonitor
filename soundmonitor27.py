@@ -48,6 +48,7 @@ Options:
 import os
 import numpy as np
 from docopt import docopt
+import matplotlib
 import matplotlib.pyplot as plt
 import smtplib
 from email.mime.text import MIMEText
@@ -180,9 +181,10 @@ def discharging():
 def recordday(opts, until):
     """Record sound level until 'until'. If 'until' is measured in days,
     beginning and ending at 08:00h."""
-    levels = np.array([])
-    timestamps = np.array([], dtype='datetime64[us]')
+    levels = []
+    timestamps = []
     plt.ion()
+    fig, ax = plt.subplots()
     lastwarningtime = (datetime.datetime.now() -
                        datetime.timedelta(seconds=opts.period))
     lastalarmtime = lastwarningtime
@@ -191,16 +193,18 @@ def recordday(opts, until):
     maxsoundlevel = 0
     while datetime.datetime.now() < until:
         soundlevel = getsoundlevel(opts)
-        levels = np.append(levels, soundlevel)
-        timestamps = np.append(
-            timestamps, np.datetime64(datetime.datetime.now()))
-        plt.cla()
-        plt.xlabel('sample number')
-        plt.ylabel('Sound level')
-        plt.plot([0, len(levels)],
-                 [opts.threshold * 0.9, opts.threshold * 1.1], 'w')
-        plt.plot([0, len(levels)], [opts.threshold, opts.threshold], 'r')
-        plt.plot(levels)
+        levels.append(soundlevel)
+        timestamps.append(matplotlib.dates.date2num(datetime.datetime.now()))
+        ax.cla()
+        ax.set_xlabel('sample number')
+        ax.set_ylabel('Sound level')
+        ax.plot_date(timestamps, levels, fmt='b-')
+        ax.plot_date([timestamps[0], timestamps[-1]],
+                     [opts.threshold * 0.9, opts.threshold * 1.1], 'w')
+        ax.plot([timestamps[0], timestamps[-1]],
+                [opts.threshold, opts.threshold], 'r')
+        ax.xaxis.set_major_formatter(
+            matplotlib.dates.DateFormatter('%H:%M:%S'))
         plt.draw()
         if (soundlevel < 0) and latencyover(opts, lastwarningtime):
             # Warning: recording has failed
