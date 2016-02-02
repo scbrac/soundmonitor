@@ -42,7 +42,7 @@ Options:
                          nU, where n is an integer number an U is a unit (m for
                          minutes, d for days) [default: 1d]
     --tmpdir=DIR         Directory, e.g. ramdisk, where to save temporary data
-                         (microphone sampling data) [default: /mnt/tmp]
+                         (microphone sampling data) [default: /tmp]
 """
 
 import os
