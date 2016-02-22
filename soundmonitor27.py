@@ -148,15 +148,16 @@ def getattachments(figure, timestamps, levels):
     filenamebase = '{}_sound'.format(
         datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S'))
     pngfile = '{}.png'.format(filenamebase)
-    wavfile = '{}.wav'.format(filenamebase)
-    numpyfile = '{}.numpy'.format(filenamebase)
-    os.system('arecord -q -f cd -d 5 {}'.format(wavfile))
+    # wavfile = '{}.wav'.format(filenamebase)
+    # numpyfile = '{}.numpy'.format(filenamebase)
+    # os.system('arecord -q -f cd -d 5 {}'.format(wavfile))
     figure.savefig(pngfile)
-    fpt = file(numpyfile, 'wb')
-    np.save(fpt, timestamps)
-    np.save(fpt, levels)
-    fpt.close()
-    return [pngfile, wavfile, numpyfile]
+    # fpt = file(numpyfile, 'wb')
+    # np.save(fpt, timestamps)
+    # np.save(fpt, levels)
+    # fpt.close()
+    # return [pngfile, wavfile, numpyfile]
+    return [pngfile]
 
 
 def discharging():
@@ -184,6 +185,7 @@ def recordday(opts, until):
     beginning and ending at 08:00h."""
     levels = []
     timestamps = []
+    plt.close("all")
     plt.ion()
     fig, ax = plt.subplots()
     lastwarningtime = (datetime.datetime.now() -
