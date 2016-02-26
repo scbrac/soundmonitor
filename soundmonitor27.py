@@ -199,7 +199,7 @@ def recordday(opts, until):
         levels.append(soundlevel)
         timestamps.append(matplotlib.dates.date2num(datetime.datetime.now()))
         ax.cla()
-        ax.set_xlabel('sample number')
+        ax.set_xlabel('Time in h')
         ax.set_ylabel('Sound level')
         ax.plot_date(timestamps, levels, fmt='b-')
         ax.plot_date([timestamps[0], timestamps[-1]],
