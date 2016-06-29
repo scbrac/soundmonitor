@@ -95,10 +95,22 @@ def sendemail(message):
             'Content-Disposition', 'attachment', filename='{}'.format(
                 os.path.basename(attachment)))
         msg.attach(part)
-    smtp = smtplib.SMTP(message.server)
-    smtp.sendmail(message.me, message.to, msg.as_string())
-    smtp.close()
-    print('email sent to {}, subject: {}'.format(msg['To'], msg['Subject']))
+    try:
+        smtp = None
+        smtp = smtplib.SMTP(message.server)
+        smtp.sendmail(message.me, message.to, msg.as_string())
+        smtp.close()
+        print('email sent to {}, subject: {}'.format(
+            msg['To'], msg['Subject']))
+    except smtplib.socket.gaierror:
+        print("Get address info failed!")
+    except smtplib.socket.error:
+        print("Could not connect to {0}".format(message.server))
+    except:
+        print("Unkown error, no email sent")
+    finally:
+        if smtp:
+            smtp.close()
 
 
 def getsoundlevel(opts):
